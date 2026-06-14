@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { SectionWrapper } from "../SectionWrapper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import * as z from "zod";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -34,11 +35,42 @@ export function Contact() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // This would typically send to an API route (e.g. Resend/SendGrid)
-    console.log(values);
-    alert("Message sent successfully! (Mock)");
-    form.reset();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          // Replace with your Web3Forms access key or use environment variable
+          access_key: process.env.NEXT_PUBLIC_WEB3FORMS_KEY || "YOUR_ACCESS_KEY_HERE",
+          name: values.name,
+          email: values.email,
+          message: values.message,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setIsSuccess(true);
+        form.reset();
+        setTimeout(() => setIsSuccess(false), 5000);
+      } else {
+        alert("Failed to send message. Please try again.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -142,8 +174,10 @@ export function Contact() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full text-lg py-6" size="lg">
-                Send Message <Send className="w-5 h-5 ml-2" />
+              <Button type="submit" className="w-full text-lg py-6" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? "Sending..." : isSuccess ? "Message Sent!" : (
+                  <>Send Message <Send className="w-5 h-5 ml-2" /></>
+                )}
               </Button>
             </form>
           </Form>
