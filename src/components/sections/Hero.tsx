@@ -127,7 +127,6 @@ export function Hero() {
                   initial={{ x: 0, y: 0, opacity: 0 }}
                   animate={{ 
                     x, 
-                    y, 
                     opacity: 1,
                     y: [y - 10, y + 10, y - 10]
                   }}
